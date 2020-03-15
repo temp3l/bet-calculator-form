@@ -8,7 +8,7 @@ const OrderTypes = [
   { value: 'Limit', text: 'The default order type. Specify an orderQty and price.' },
   { value: 'Market', text: 'A traditional Market order. A Market order will execute until filled or your bankruptcy price is reached, at which point it will cancel.' }
   //{ value: 'Stop', text: 'A Stop Market order. Specify an orderQty and stopPx. When the stopPx is reached, the order will be entered into the book. On sell orders, the order will trigger if the triggering price is lower than the stopPx. On buys, higher.' },
-  //{ value: 'Note', text: 'Stop orders do not consume margin until triggered. Be sure that the required margin is available in your account so that it may trigger fully.' },
+  //{ value: 'Note', text: 'Stop orders do not consume margin until triggered. Be sure that the required margin is available in your settings so that it may trigger fully.' },
   //{ value: 'Close', text: "Stops don't require an orderQty. See Execution Instructions below." },
   //{ value: 'StopLimit', text: 'Like a Stop Market, but enters a Limit order instead of a Market order. Specify an orderQty, stopPx, and price.' },
   //{ value: 'MarketIfTouched', text: 'Similar to a Stop, but triggers are done in the opposite direction. Useful for Take Profit orders.' },
@@ -20,12 +20,18 @@ type StopsState = {
   TP: string;
   TPPrice: number;
 };
+type SettingsState = {
+  capitalUSD: string;
+  capitalBTC: string;
+  btcUsdRate: string;
+};
 const Form = ({ onChange }: FormProps) => {
-  const [stops, setStops] = React.useState<StopsState>({ SL: '10', SLPrice: 0, TP: '10', TPPrice: 0 });
+  const [settings, setSettings] = React.useState<SettingsState>({ btcUsdRate: '5000', capitalUSD: '500', capitalBTC: '' });
+  const [stops, setStops] = React.useState<StopsState>({ SL: '5', SLPrice: 0, TP: '10', TPPrice: 0 });
   const [state, setState] = React.useState<IOrder>({
     symbol: 'XBTUSD',
     price: 5000,
-    orderQty: 1,
+    orderQty: 100,
     ordType: OrderTypeEnum.Limit,
     side: SideEnum.Buy,
     text: 'from bet-calculator-form'
@@ -38,9 +44,16 @@ const Form = ({ onChange }: FormProps) => {
     const { name, value } = e.target;
     setStops({ ...stops, [name]: value });
   };
+  const changeSettings = (e: any) => {
+    const { name, value } = e.target;
+    console.log({ name, value });
+    setSettings({ ...settings, [name]: Number(value) });
+  };
+  const usd2btc = ({ capitalUSD, btcUsdRate }: SettingsState) => (Number(capitalUSD) / Number(btcUsdRate)).toFixed(4);
 
-  const calculateStops = () => {};
-
+  // 5000$
+  // 100$
+  // https://github.com/BitMEX/api-connectors/tree/master/official-ws/nodejs
   React.useEffect(() => {
     const { price: _price, side } = state;
     const SLDiff = (Number(_price) / 100) * Number(stops.SL);
@@ -58,30 +71,41 @@ const Form = ({ onChange }: FormProps) => {
       SLPrice: Math.round(_SLPrice),
       TPPrice: Math.round(_TPPrice)
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stops.TP, stops.SL, state]);
 
+  React.useEffect(() => {
+    //setSettings({ ...settings, capitalBTC: usd2btc({ ...settings }) });
+  }, []);
   return (
     // prettier-ignore
     <div className='container'>
         {/* <!-- Symbol, Limit/Margin -->*/}
-        <div className='form-group row none'>
-          {/* <!-- select Symbol --> */}
-
+        <div className='form-group row '>
           <div className='col'>
-            <div className="input-group mb-3">
+            {/* <!-- select Symbol --> */}
+            <div className="input-group">
+              <div className="input-group-prepend">
+                <span className="input-group-text">$ capital <small>&nbsp; {usd2btc(settings)} ₿</small></span>
+              </div>
+              <input onChange={changeSettings} type='string' name="capitalUSD" className='form-control' value={settings.capitalUSD} placeholder="USD"/>
+            </div>
+          </div>
+          <div className='col'>
+            <div className="input-group">
               <div className="input-group-prepend">
                 <span className="input-group-text">Symbol</span>
               </div>
-              <input onChange={onChange2} type='text' name="symbol" className='form-control' id='symbol' value={state.symbol} />
+              <input readOnly onChange={onChange2} type='text' name="symbol" className='form-control' id='symbol' value={state.symbol} />
             </div>
           </div>
-          {/* <!-- select Limit --> */}
           <div className='col'>
+          {/* <!-- select Limit --> */}
             <div className="input-group mb-3">
               <div className="input-group-prepend">
                 <span className="input-group-text">Type</span>
               </div>
-              <select className="form-control" id='ordType' onChange={onChange2} name="ordType">
+              <select className="form-control" id='ordType' onChange={onChange2} name="ordType" disabled>
                 {OrderTypes.map( ({value,text}) => (
                   <option key={`oType-${value}`} value={value}>{value}</option>
                 ))}
@@ -89,7 +113,6 @@ const Form = ({ onChange }: FormProps) => {
             </div>
           </div>
         </div>
-
 
         {/* <!-- Action Button Group / Submit -->*/}
         <div className="form-group row">
