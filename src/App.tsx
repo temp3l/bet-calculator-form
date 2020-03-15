@@ -1,42 +1,20 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 import './styles/App.css';
-import bitmexHttp from './connectors/bitmexHttp';
+import { postOrder } from './connectors/bitmexHttp';
+import { OrderTypeEnum } from './types/Order';
 //import TradingView from './pages/TradingView';
-import Websocket from 'react-websocket';
-
-type FormProps = {
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-};
-
-const Form = ({ onChange }: FormProps) => (
-  <div className='container'>
-    <form>
-      <div className='form-group row'>
-        <label htmlFor='staticEmail' className='col-sm-2 col-form-label'>
-          Email
-        </label>
-        <div className='col-sm-10'>
-          <input onChange={onChange} type='text' className='form-control-plaintext' id='staticEmail' value='email@example.com' />
-        </div>
-      </div>
-      <div className='form-group row'>
-        <label htmlFor='inputPassword' className='col-sm-2 col-form-label'>
-          Password
-        </label>
-        <div className='col-sm-10'>
-          <input onChange={onChange} type='password' className='form-control' id='inputPassword' placeholder='Password' />
-        </div>
-      </div>
-    </form>
-  </div>
-);
+//import Websocket from 'react-websocket';
+import OrderForm from './pages/OrderForm/OrderForm';
 
 const App = () => {
-  bitmexHttp();
+  // postOrder({ symbol: 'XBTUSD', orderQty: 1, price: 5160, ordType: OrderTypeEnum.Limit, side: 'Buy', text: 'from bet-calculator-form' });
   return (
     <div className='App'>
-      <h1>asd</h1>
-      <Form onChange={console.log} />
+      <br />
+      <br />
+      <br />
+      <OrderForm onChange={console.log} price={5000} />
     </div>
   );
   // <TradingView />
