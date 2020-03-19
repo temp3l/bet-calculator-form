@@ -6,7 +6,7 @@ import { IOrder, IOrderResponse } from '../types/Order';
 
 const apiKey = `${process.env.REACT_APP_BITMEX_API_KEY}`;
 const apiSecret = `${process.env.REACT_APP_BITMEX_API_SECRET}`;
-console.log({ apiKey, apiSecret });
+//console.log({ apiKey, apiSecret });
 
 const sampleOrder = {
   symbol: 'XBTUSD',
@@ -50,6 +50,26 @@ const sampleResponse = {
   text: 'Submitted via API.',
   transactTime: '2020-03-15T03:55:17.971Z',
   timestamp: '2020-03-15T03:55:17.971Z'
+};
+
+export const getSignature = ({ verb, path, postBody }: any) => {
+  const expires = Math.round(new Date().getTime() / 1000) + 60; // 1 min in the future
+  const signature = crypto
+    .createHmac('sha256', `${process.env.REACT_APP_BITMEX_API_SECRET}`)
+    .update(verb + path + expires + postBody)
+    .digest('hex');
+
+  const headers = {
+    // https://www.bitmex.com/app/apiKeysUsage for more details.
+    'content-type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+    Accept: 'application/json',
+    'api-expires': expires,
+    'api-key': apiKey,
+    'api-signature': signature,
+    json: true
+  };
+  return signature;
 };
 
 export const postOrder = async (order: IOrder): Promise<ErrorResponse | IOrderResponse> => {

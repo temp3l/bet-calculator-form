@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { ChangeEvent } from 'react';
-import { Button, ToggleButton } from 'react-bootstrap';
+import React, { useContext } from 'react';
 import { OrderTypeEnum, IOrder, SideEnum } from '../../types/Order';
+import InstrumentContext from '../../contexts/instrument-context';
+
 import './OrderForm.css';
 
 const OrderTypes = [
@@ -23,14 +24,15 @@ type StopsState = {
 type SettingsState = {
   capitalUSD: string;
   capitalBTC: string;
-  btcUsdRate: string;
 };
-const Form = ({ onChange }: FormProps) => {
-  const [settings, setSettings] = React.useState<SettingsState>({ btcUsdRate: '5000', capitalUSD: '500', capitalBTC: '' });
+const Form = ({ onChange, socket }: any) => {
+  const Instrument = useContext(InstrumentContext);
+  const [instrument, setInstrument] = React.useState<any>({ lastPrice: -1 });
+  const [settings, setSettings] = React.useState<SettingsState>({ capitalUSD: '500', capitalBTC: '' });
   const [stops, setStops] = React.useState<StopsState>({ SL: '5', SLPrice: 0, TP: '10', TPPrice: 0 });
   const [state, setState] = React.useState<IOrder>({
     symbol: 'XBTUSD',
-    price: 5000,
+    price: -1,
     orderQty: 100,
     ordType: OrderTypeEnum.Limit,
     side: SideEnum.Buy,
@@ -49,13 +51,37 @@ const Form = ({ onChange }: FormProps) => {
     console.log({ name, value });
     setSettings({ ...settings, [name]: Number(value) });
   };
-  const usd2btc = ({ capitalUSD, btcUsdRate }: SettingsState) => (Number(capitalUSD) / Number(btcUsdRate)).toFixed(4);
+  //const usd2btc = ({ capitalUSD, btcUsdRate }: SettingsState) => (Number(capitalUSD) / Number(btcUsdRate)).toFixed(4);
 
-  // 5000$
-  // 100$
-  // https://github.com/BitMEX/api-connectors/tree/master/official-ws/nodejs
+  socket.onmessage = (evt: any) => {
+    const { table, action, data } = JSON.parse(evt.data);
+    if (table === 'instrument' && action === 'update') {
+      if (data && data.length) {
+        data.forEach((msg: any) => onMessage(msg));
+      } else {
+        //console.log(evt);
+      }
+    } else if (table === 'order') {
+      //data.forEach((msg: any) => console.log(msg));
+      //console.log(JSON.parse(evt.data));
+    } else if (table === 'position') {
+      data.forEach((msg: any) => console.log(msg));
+    } else {
+      // console.log(evt.data);
+    }
+  };
+
+  const onMessage = (data: any) => {
+    const { symbol, lastPrice, lastTickDirection, lastChangePcnt, timestamp } = data;
+    if (symbol === state.symbol) {
+      setInstrument({ ...instrument, ...data });
+      if (state.price === -1 && lastPrice) setState({ ...state, price: lastPrice });
+      // console.log(instrument);
+    }
+  };
   React.useEffect(() => {
     const { price: _price, side } = state;
+    if (_price === -1) return;
     const SLDiff = (Number(_price) / 100) * Number(stops.SL);
     const TPDiff = (Number(_price) / 100) * Number(stops.TP);
     let _SLPrice, _TPPrice;
@@ -74,118 +100,131 @@ const Form = ({ onChange }: FormProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stops.TP, stops.SL, state]);
 
-  React.useEffect(() => {
-    //setSettings({ ...settings, capitalBTC: usd2btc({ ...settings }) });
-  }, []);
   return (
-    // prettier-ignore
     <div className='container'>
-        {/* <!-- Symbol, Limit/Margin -->*/}
-        <div className='form-group row '>
-          <div className='col'>
-            {/* <!-- select Symbol --> */}
-            <div className="input-group">
-              <div className="input-group-prepend">
-                <span className="input-group-text">$ capital <small>&nbsp; {usd2btc(settings)} ₿</small></span>
-              </div>
-              <input onChange={changeSettings} type='string' name="capitalUSD" className='form-control' value={settings.capitalUSD} placeholder="USD"/>
+      <pre>{JSON.stringify(Instrument, null, 2)}</pre>
+      <h1>huhu</h1>
+      {/* <!-- Symbol, Limit/Margin -->*/}
+      <div className='form-group row '>
+        <div className='col'>
+          {/* <!-- select Symbol --> */}
+          <div className='input-group'>
+            <div className='input-group-prepend'>
+              <span className='input-group-text'>capital</span>
             </div>
+            <input onChange={changeSettings} type='string' name='capitalUSD' className='form-control' value={settings.capitalUSD} placeholder='USD' />
           </div>
-          <div className='col'>
-            <div className="input-group">
-              <div className="input-group-prepend">
-                <span className="input-group-text">Symbol</span>
-              </div>
-              <input readOnly onChange={onChange2} type='text' name="symbol" className='form-control' id='symbol' value={state.symbol} />
+        </div>
+        <div className='col'>
+          <div className='input-group'>
+            <div className='input-group-prepend'>
+              <span className='input-group-text'>Symbol</span>
             </div>
+            <input readOnly onChange={onChange2} type='text' name='symbol' className='form-control' id='symbol' value={state.symbol} />
           </div>
-          <div className='col'>
+        </div>
+        <div className='col'>
           {/* <!-- select Limit --> */}
-            <div className="input-group mb-3">
-              <div className="input-group-prepend">
-                <span className="input-group-text">Type</span>
-              </div>
-              <select className="form-control" id='ordType' onChange={onChange2} name="ordType" disabled>
-                {OrderTypes.map( ({value,text}) => (
-                  <option key={`oType-${value}`} value={value}>{value}</option>
-                ))}
-              </select>
+          <div className='input-group mb-3'>
+            <div className='input-group-prepend'>
+              <span className='input-group-text'>Type</span>
             </div>
+            <select className='form-control' id='ordType' onChange={onChange2} name='ordType' disabled>
+              {OrderTypes.map(({ value, text }) => (
+                <option key={`oType-${value}`} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* <!-- Action Button Group / Submit -->*/}
+      <div className='form-group row'>
+        <div className='col'>
+          <button onClick={() => setState({ ...state, side: SideEnum.Buy })} className={`btn btn-block  ${state.side === 'Buy' ? 'btn-success' : 'btn-outline-success'}`}>
+            Long{' '}
+            <span className='actionButtonSubtitle'>
+              {state.orderQty} @ {state.price}
+            </span>
+          </button>
+        </div>
+        <div className='col'>
+          <button onClick={() => setState({ ...state, side: SideEnum.Sell })} className={`btn btn-block  ${state.side === 'Sell' ? 'btn-danger' : 'btn-outline-danger'}`}>
+            Short{' '}
+            <span className='actionButtonSubtitle'>
+              {state.orderQty} @ {state.price}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* <!-- second row: Price + Quantity --> */}
+      <div className='form-group row'>
+        <div className='col'>
+          <div className='input-group mb-3'>
+            <div className='input-group-prepend'>
+              <span className='input-group-text'>Rate</span>
+            </div>
+            <input value={instrument.lastPrice} onChange={() => {}} name='rate' type='number' className='form-control' placeholder='Rate' />
+          </div>
+        </div>
+        <div className='col'>
+          <div className='input-group mb-3'>
+            <div className='input-group-prepend'>
+              <span className='input-group-text'>Price</span>
+            </div>
+            <input value={state.price} onChange={onChange2} name='price' type='number' className='form-control' id='orderQty' placeholder='Contract Count' />
+          </div>
+        </div>
+        <div className='col'>
+          <div className='input-group mb-3'>
+            <div className='input-group-prepend'>
+              <span className='input-group-text'>Quantity</span>
+            </div>
+            <input value={state.orderQty} onChange={onChange2} name='orderQty' type='number' className='form-control' id='orderQty' placeholder='Contract Count' />
+          </div>
+        </div>
+      </div>
+
+      {/* <!-- third Row: StopLoss + TakeProfit --> */}
+      <div className='form-group row'>
+        <div className='col'>
+          <div className='input-group'>
+            <div className='input-group-prepend'>
+              <span className='input-group-text stopsLabel'>SL {stops.SL}%</span>
+            </div>
+            <input min='1' max='100' value={stops.SL} type='range' onChange={changeStops} name='SL' className='form-control form-control-range' />
+            <span className='font-weight-bold ml-2 mt-1'>{stops.SLPrice}</span>
           </div>
         </div>
 
-        {/* <!-- Action Button Group / Submit -->*/}
-        <div className="form-group row">
-          <div className="col">
-            <button onClick={()=>setState({...state, side: SideEnum.Buy})} className={`btn btn-block  ${state.side === 'Buy' ? 'btn-success' : 'btn-outline-success' }`} >
-              Long <span className="actionButtonSubtitle">{state.orderQty} @ {state.price}</span>
-            </button>
-          </div>
-          <div className="col">
-            <button onClick={()=>setState({...state, side: SideEnum.Sell})} className={`btn btn-block  ${state.side === 'Sell' ? 'btn-danger' : 'btn-outline-danger' }`} >
-              Short <span className="actionButtonSubtitle">{state.orderQty} @ {state.price}</span>
-            </button>
+        <div className='col'>
+          <div className='input-group'>
+            <div className='input-group-prepend'>
+              <span className='input-group-text stopsLabel'>TP {stops.TP}%</span>
+            </div>
+            <input min='1' max='100' value={stops.TP} type='range' onChange={changeStops} name='TP' className='form-control form-control-range' />
+            <span className='font-weight-bold ml-2 mt-1'>{stops.TPPrice}</span>
           </div>
         </div>
+      </div>
 
-        {/* <!-- second row: Price + Quantity --> */}
-        <div className='form-group row'>
-          <div className='col'>
-            <div className="input-group mb-3">
-              <div className="input-group-prepend">
-                <span className="input-group-text">Price</span>
-              </div>
-              <input value={state.price} onChange={onChange2}  name="price" type='number' className='form-control' id='orderQty' placeholder='Contract Count' />
-            </div>
-          </div>
-          <div className='col'>
-            <div className="input-group mb-3">
-              <div className="input-group-prepend">
-                <span className="input-group-text">Quantity</span>
-              </div>
-              <input value={state.orderQty} onChange={onChange2}  name="orderQty" type='number' className='form-control' id='orderQty' placeholder='Contract Count' />
-            </div>
-          </div>
-        </div>
-
-
-        {/* <!-- third Row: StopLoss + TakeProfit --> */}
-        <div className='form-group row'>
-          <div className='col'>
-            <div className="input-group">
-              <div className="input-group-prepend">
-                <span className="input-group-text stopsLabel">SL {stops.SL}%</span>
-              </div>
-              <input min="1" max="100" value={stops.SL} type="range" onChange={changeStops} name="SL" className="form-control form-control-range"/>
-                <span className="font-weight-bold ml-2 mt-1">{stops.SLPrice}</span>
-            </div>
-          </div>
-
-          <div className='col'>
-            <div className="input-group">
-              <div className="input-group-prepend">
-                <span className="input-group-text stopsLabel">TP {stops.TP}%</span>
-              </div>
-              <input min="1" max="100" value={stops.TP} type="range" onChange={changeStops} name="TP" className="form-control form-control-range" />
-              <span className="font-weight-bold ml-2 mt-1">{stops.TPPrice}</span>
-            </div>
-          </div>
-        </div>
-
-
-      <br/>
-      <br/><br/><br/><br/>
-      <a href='htTPs://testnet.bitmex.com/api/explorer/#!/Order/Order_new' target='_blank' rel='noopener noreferrer'>posting bitmex orders</a>
-      <br/><br/>
-      <pre>{JSON.stringify({stops,state},null,2)}</pre>
-
+      <br />
+      <br />
+      <br />
+      <br />
+      <br />
+      <a href='htTPs://testnet.bitmex.com/api/explorer/#!/Order/Order_new' target='_blank' rel='noopener noreferrer'>
+        posting bitmex orders
+      </a>
+      <br />
+      <br />
+      <pre>{JSON.stringify({ instrument, stops, state }, null, 2)}</pre>
     </div>
   );
 };
-
-type FormProps = {
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  price: number;
-};
+//Form.contextType = InstrumentContext;
 
 export default Form;
