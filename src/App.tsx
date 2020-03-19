@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useContext } from 'react';
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
-import './styles/App.css';
+
 import { postOrder } from './connectors/bitmexHttp';
 import Socket from './connectors/bitmexSocket';
 import { OrderTypeEnum, SideEnum } from './types/Order';
@@ -17,6 +17,8 @@ import List from './components/List';
 import Form from './components/Form';
 import Instrument from './components/RecentTrades';
 import SocketStatus from './components/SocketStatus';
+import TradeHistory from './components/TradeHistory';
+import './styles/App.css';
 const Home = () => {
   //  postOrder({ symbol: 'XBTUSD', orderQty: 1, price: 5160, ordType: OrderTypeEnum.Limit, side: SideEnum.Buy, text: 'from bet-calculator-form' });
   return (
@@ -50,10 +52,17 @@ const App = ({ socket, dispatch }: any) => {
             <li>
               <Link to='/form'>Form</Link>
             </li>
+            <li>
+              <Link to='/TradeHistory'>TradeHistory</Link>
+            </li>
           </ul>
         </nav>
         <SocketStatus />
         <Switch>
+          <Route path='/TradeHistory'>
+            <TradeHistory />
+          </Route>
+
           <Route path='/list'>
             <List />
           </Route>

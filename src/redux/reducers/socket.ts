@@ -55,13 +55,12 @@ export default function reducer(state = initialState, action: SocketActionType =
       try {
         const { table, action: wsAction, data } = JSON.parse(action.data);
         if (table !== 'instrument' && table !== 'trade') console.log({ table, wsAction });
-
         if (table === 'instrument') return Object.assign({}, state, { instrument: Object.assign({}, state.instrument, ...data) });
-        else if (table === 'trade') return Object.assign({}, state, { trades: state.trades.concat(data) });
+        else if (table === 'trade') return Object.assign({}, state, { trades: state.trades.concat(data).slice(0, 100) });
         else if (table === 'order') return Object.assign({}, state, { order: Object.assign({}, state.order, ...data) });
         else if (table === 'wallet') return Object.assign({}, state, { wallet: Object.assign({}, state.wallet, ...data) });
-        else if (table === 'quoteBin1m') return Object.assign({}, state, { quoteBin1m: state.quoteBin1m.concat(data) });
-        else if (table === 'chat') return Object.assign({}, state, { chat: [...state.chat, ...data] });
+        else if (table === 'quoteBin1m') return Object.assign({}, state, { quoteBin1m: state.quoteBin1m.concat(data).slice(0, 100) });
+        else if (table === 'chat') return Object.assign({}, state, { chat: [...state.chat, ...data].slice(0, 800) });
         return state;
       } catch (e) {
         return state;
@@ -75,10 +74,8 @@ export default function reducer(state = initialState, action: SocketActionType =
 export function initializeSocket() {
   return (dispatch: Function) => {
     const socket = new WebSocket('wss://testnet.bitmex.com/realtime');
-
     const expires = Math.round(new Date().getTime() / 1000) + 60; // 1 min in the future
     const signature = getSignature({ verb: 'GET', path: '/realtime', postBody: '' });
-
     const subscribe = (args: string[]) => socket.send(JSON.stringify({ op: 'subscribe', args }));
 
     dispatch(socketConnectionInit(socket));

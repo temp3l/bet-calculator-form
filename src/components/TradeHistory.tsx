@@ -5,17 +5,16 @@ const mapStateToProps = (state: any) => ({ socket: state.socket });
 
 const ConnectedList = ({ socket }: any) => (
   <>
-    <h3>Trades</h3>
-    <ul>
-      {socket.trades.map((trade: any) => (
-        <li key={trade.trdMatchID}>{trade.timestamp}</li>
-      ))}
-    </ul>
-    <pre>{JSON.stringify(socket, null, 2)}</pre>
-
-    {/*<h3>instrument</h3>
-      <pre>{JSON.stringify(socket.instrument, null, 2)}</pre>
-    */}
+    <div className='tradeHistory'>
+      <ul>
+        {socket.trades
+          .concat()
+          .reverse()
+          .map((trade: any) => (
+            <li key={trade.trdMatchID}>{trade.timestamp}</li>
+          ))}
+      </ul>
+    </div>
   </>
 );
 
