@@ -11,11 +11,7 @@ const ConnectedList = ({ socket }: any) => (
         <li key={trade.trdMatchID}>{trade.timestamp}</li>
       ))}
     </ul>
-    <pre>{JSON.stringify(socket, null, 2)}</pre>
-
-    {/*<h3>instrument</h3>
-      <pre>{JSON.stringify(socket.instrument, null, 2)}</pre>
-    */}
+    <pre>{JSON.stringify(socket.trades, null, 2)}</pre>
   </>
 );
 

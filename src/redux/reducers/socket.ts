@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import crypto from 'crypto';
+import _ from 'lodash';
 
 const SOCKET_CONNECTION_INIT = 'SOCKET_CONNECTION_INIT';
 const SOCKET_CONNECTION_SUCCESS = 'SOCKET_CONNECTION_SUCCESS';
@@ -16,7 +17,9 @@ export const initialState = {
   wallet: {},
   quoteBin1m: [],
   chat: [],
-  order: {}
+  order: {},
+  orders: [],
+  position: []
 };
 
 type SocketActionType = {
@@ -27,6 +30,12 @@ type SocketActionType = {
   data?: any;
 };
 
+const updateOrders = (orders: any[], order: any) => {
+  const index = _.findIndex(orders, { orderID: order.orderID });
+  const newOrders = [...orders];
+  newOrders[index] = Object.assign({}, newOrders[index], order);
+  return newOrders;
+};
 export default function reducer(state = initialState, action: SocketActionType = {}) {
   switch (action.type) {
     case SOCKET_CONNECTION_INIT:
@@ -54,11 +63,16 @@ export default function reducer(state = initialState, action: SocketActionType =
     case SOCKET_MESSAGE:
       try {
         const { table, action: wsAction, data } = JSON.parse(action.data);
-        if (table !== 'instrument' && table !== 'trade') console.log({ table, wsAction });
+        //if (table !== 'instrument' && table !== 'trade') console.log({ table, wsAction });
         if (table === 'instrument') return Object.assign({}, state, { instrument: Object.assign({}, state.instrument, ...data) });
         else if (table === 'trade') return Object.assign({}, state, { trades: state.trades.concat(data).slice(0, 100) });
-        else if (table === 'order') return Object.assign({}, state, { order: Object.assign({}, state.order, ...data) });
-        else if (table === 'wallet') return Object.assign({}, state, { wallet: Object.assign({}, state.wallet, ...data) });
+        else if (table === 'position') {
+          //console.log({ table, wsAction, data });
+          return Object.assign({}, state, { position: Object.assign({}, state.position, ...data) });
+        } else if (table === 'order') {
+          if (wsAction === 'partial') return Object.assign({}, state, { orders: data });
+          if (wsAction === 'update') return Object.assign({}, state, { orders: updateOrders(state.orders, data[0]) });
+        } else if (table === 'wallet') return Object.assign({}, state, { wallet: Object.assign({}, state.wallet, ...data) });
         else if (table === 'quoteBin1m') return Object.assign({}, state, { quoteBin1m: state.quoteBin1m.concat(data).slice(0, 100) });
         else if (table === 'chat') return Object.assign({}, state, { chat: [...state.chat, ...data].slice(0, 800) });
         return state;
@@ -88,7 +102,18 @@ export function initializeSocket() {
       subscribe(['order']);
       subscribe(['chat']);
       subscribe(['trade:XBTUSD']);
-      subscribe(['quoteBin1m:XBTUSD']);
+      // subscribe(['quoteBin1m:XBTUSD']);
+      subscribe(['tradeBin1m:XBTUSD']);
+      subscribe(['margin']);
+      subscribe(['position']);
+      // "affiliate",   // Affiliate status, such as total referred users & payout %
+      // "execution",   // Individual executions; can be multiple per order
+      // "order",       // Live updates on your orders
+      // "margin",      // Updates on your current account balance and margin requirements
+      // "position",    // Updates on your positions
+      // "privateNotifications", // Individual notifications - currently not used
+      // "transact"     // Deposit/Withdrawal updates
+      // "wallet"       // Bitcoin address balance data, including total deposits & withdrawals
     };
 
     socket.onerror = function() {

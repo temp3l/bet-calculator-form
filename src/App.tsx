@@ -1,24 +1,25 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useContext } from 'react';
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
-
 import { postOrder } from './connectors/bitmexHttp';
-import Socket from './connectors/bitmexSocket';
-import { OrderTypeEnum, SideEnum } from './types/Order';
+//import Socket from './connectors/bitmexSocket';
+//import { OrderTypeEnum, SideEnum } from './types/Order';
 import OrderForm from './pages/OrderForm/OrderForm';
-// import Wallet from './components/Mex/Wallet';
-import { InstrumentProvider, defaultInstrument, InstrumentConsumer } from './contexts/instrument-context';
+//import { InstrumentProvider, defaultInstrument, InstrumentConsumer } from './contexts/instrument-context';
 import RecentTrades from './components/RecentTrades';
-import SocketContext from './contexts/socket_context/context';
-import Emitter from './connectors/emitter';
-//import store from './redux/store/index';
-import { addArticle } from './redux/actions/index';
+// import SocketContext from './contexts/socket_context/context';
+// import Emitter from './connectors/emitter';
+// import { addArticle } from './redux/actions/index';
 import List from './components/List';
 import Form from './components/Form';
-import Instrument from './components/RecentTrades';
+import Instrument from './components/Instrument';
 import SocketStatus from './components/SocketStatus';
 import TradeHistory from './components/TradeHistory';
+import Orders from './components/Orders';
 import './styles/App.css';
+import Wallet from './components/Wallet';
+import Position from './components/Position';
+
 const Home = () => {
   //  postOrder({ symbol: 'XBTUSD', orderQty: 1, price: 5160, ordType: OrderTypeEnum.Limit, side: SideEnum.Buy, text: 'from bet-calculator-form' });
   return (
@@ -50,6 +51,15 @@ const App = ({ socket, dispatch }: any) => {
               <Link to='/instrument'>Instrument</Link>
             </li>
             <li>
+              <Link to='/Orders'>Orders</Link>
+            </li>
+            <li>
+              <Link to='/Wallet'>Wallet</Link>
+            </li>
+            <li>
+              <Link to='/Position'>Position</Link>
+            </li>
+            <li>
               <Link to='/form'>Form</Link>
             </li>
             <li>
@@ -62,7 +72,15 @@ const App = ({ socket, dispatch }: any) => {
           <Route path='/TradeHistory'>
             <TradeHistory />
           </Route>
-
+          <Route path='/Orders'>
+            <Orders />
+          </Route>
+          <Route path='/Position'>
+            <Position />
+          </Route>
+          <Route path='/Wallet'>
+            <Wallet />
+          </Route>
           <Route path='/list'>
             <List />
           </Route>
@@ -81,7 +99,4 @@ const App = ({ socket, dispatch }: any) => {
   );
 };
 
-function About() {
-  return <h2>About</h2>;
-}
 export default App;

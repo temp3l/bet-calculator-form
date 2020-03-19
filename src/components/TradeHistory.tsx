@@ -6,14 +6,21 @@ const mapStateToProps = (state: any) => ({ socket: state.socket });
 const ConnectedList = ({ socket }: any) => (
   <>
     <div className='tradeHistory'>
-      <ul>
-        {socket.trades
-          .concat()
-          .reverse()
-          .map((trade: any) => (
-            <li key={trade.trdMatchID}>{trade.timestamp}</li>
-          ))}
-      </ul>
+      <table className='table table-dark table-condensed table-sm table-small'>
+        <tbody>
+          {socket.trades
+            .concat()
+            .reverse()
+            .map((trade: any) => (
+              <tr key={trade.trdMatchID}>
+                <td>{trade.price}</td>
+                <td>{trade.size}</td>
+                <td>{trade.side}</td>
+                <td>{new Date(trade.timestamp).toLocaleTimeString()}</td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
     </div>
   </>
 );
@@ -21,6 +28,8 @@ const ConnectedList = ({ socket }: any) => (
 const List = connect(mapStateToProps)(ConnectedList);
 
 export default List;
+
+// price amount time
 
 // Trades
 // [
