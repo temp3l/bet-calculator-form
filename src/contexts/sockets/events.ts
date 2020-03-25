@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { socket } from './index';
-import Emitter from '../../connectors/emitter';
+//import Emitter from '../../connectors/emitter';
 
 export const socketEvents = ({ setValue, setWallet, setPosition, setTrade, setOrder, setOrderBook, setInstrument }: any) => {
   socket.onmessage = (evt: any) => {
@@ -33,8 +33,6 @@ export const socketEvents = ({ setValue, setWallet, setPosition, setTrade, setOr
     if (table && data && data.length) {
       //Emitter.emit(table, data[0]);
       //console.log(table);
-
-      Emitter.emit(table, { a: 1 });
       // console.log(data[0]);
     }
   };

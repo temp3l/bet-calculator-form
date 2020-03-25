@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useContext } from 'react';
+import React from 'react';
+import { connect } from 'react-redux';
 import { OrderTypeEnum, IOrder, SideEnum } from '../../types/Order';
-import InstrumentContext from '../../contexts/instrument-context';
-
 import './OrderForm.css';
 
 const OrderTypes = [
@@ -25,9 +24,10 @@ type SettingsState = {
   capitalUSD: string;
   capitalBTC: string;
 };
-const Form = ({ onChange, socket }: any) => {
-  const Instrument = useContext(InstrumentContext);
-  const [instrument, setInstrument] = React.useState<any>({ lastPrice: -1 });
+
+const mapStateToProps = (state: any) => ({ instrument: state.socket.instrument });
+
+const ConnectedForm = ({ instrument }: any) => {
   const [settings, setSettings] = React.useState<SettingsState>({ capitalUSD: '500', capitalBTC: '' });
   const [stops, setStops] = React.useState<StopsState>({ SL: '5', SLPrice: 0, TP: '10', TPPrice: 0 });
   const [state, setState] = React.useState<IOrder>({
@@ -53,32 +53,6 @@ const Form = ({ onChange, socket }: any) => {
   };
   //const usd2btc = ({ capitalUSD, btcUsdRate }: SettingsState) => (Number(capitalUSD) / Number(btcUsdRate)).toFixed(4);
 
-  socket.onmessage = (evt: any) => {
-    const { table, action, data } = JSON.parse(evt.data);
-    if (table === 'instrument' && action === 'update') {
-      if (data && data.length) {
-        data.forEach((msg: any) => onMessage(msg));
-      } else {
-        //console.log(evt);
-      }
-    } else if (table === 'order') {
-      //data.forEach((msg: any) => console.log(msg));
-      //console.log(JSON.parse(evt.data));
-    } else if (table === 'position') {
-      data.forEach((msg: any) => console.log(msg));
-    } else {
-      // console.log(evt.data);
-    }
-  };
-
-  const onMessage = (data: any) => {
-    const { symbol, lastPrice, lastTickDirection, lastChangePcnt, timestamp } = data;
-    if (symbol === state.symbol) {
-      setInstrument({ ...instrument, ...data });
-      if (state.price === -1 && lastPrice) setState({ ...state, price: lastPrice });
-      // console.log(instrument);
-    }
-  };
   React.useEffect(() => {
     const { price: _price, side } = state;
     if (_price === -1) return;
@@ -97,12 +71,15 @@ const Form = ({ onChange, socket }: any) => {
       SLPrice: Math.round(_SLPrice),
       TPPrice: Math.round(_TPPrice)
     });
+    console.log(23);
+    if (instrument && instrument.lastPrice && state.price === -1) {
+      setState({ ...state, price: instrument.lastPrice });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stops.TP, stops.SL, state]);
 
   return (
     <div className='container'>
-      <pre>{JSON.stringify(Instrument, null, 2)}</pre>
       <h1>huhu</h1>
       {/* <!-- Symbol, Limit/Margin -->*/}
       <div className='form-group row '>
@@ -164,10 +141,15 @@ const Form = ({ onChange, socket }: any) => {
       <div className='form-group row'>
         <div className='col'>
           <div className='input-group mb-3'>
-            <div className='input-group-prepend'>
-              <span className='input-group-text'>Rate</span>
+            <div
+              className='input-group-prepend clickRate'
+              onClick={() => {
+                setState({ ...state, price: instrument.lastPrice });
+              }}
+            >
+              <span className='input-group-text '>Rate {instrument && instrument.lastPrice}</span>
             </div>
-            <input value={instrument.lastPrice} onChange={() => {}} name='rate' type='number' className='form-control' placeholder='Rate' />
+            <input value={state.price} onChange={() => {}} name='rate' type='number' className='form-control' placeholder='Rate' />
           </div>
         </div>
         <div className='col'>
@@ -211,20 +193,23 @@ const Form = ({ onChange, socket }: any) => {
         </div>
       </div>
 
-      <br />
-      <br />
-      <br />
-      <br />
-      <br />
-      <a href='htTPs://testnet.bitmex.com/api/explorer/#!/Order/Order_new' target='_blank' rel='noopener noreferrer'>
-        posting bitmex orders
-      </a>
-      <br />
-      <br />
-      <pre>{JSON.stringify({ instrument, stops, state }, null, 2)}</pre>
+      <div>
+        <br />
+        <br />
+        <br />
+        <br />
+        <br />
+        <a href='htTPs://testnet.bitmex.com/api/explorer/#!/Order/Order_new' target='_blank' rel='noopener noreferrer'>
+          posting bitmex orders
+        </a>
+        <br />
+        <br />
+        <pre>{JSON.stringify({ stops, state }, null, 2)}</pre>
+      </div>
     </div>
   );
 };
-//Form.contextType = InstrumentContext;
+
+const Form = connect(mapStateToProps)(ConnectedForm);
 
 export default Form;

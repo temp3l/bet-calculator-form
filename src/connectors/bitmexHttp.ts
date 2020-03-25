@@ -72,15 +72,16 @@ export const getSignature = ({ verb, path, postBody }: any) => {
   return signature;
 };
 
-export const postOrder = async (order: IOrder): Promise<ErrorResponse | IOrderResponse> => {
+export const postOrder = async ({ orders }: { orders?: IOrder[] }): Promise<ErrorResponse | IOrderResponse> => {
   // see this info: https://testnet.bitmex.com/api/explorer/#!/Order/Order_new
   const verb = 'POST';
-  const path = '/api/v1/order';
+  const path = '/api/v1/order/bulk';
   const expires = Math.round(new Date().getTime() / 1000) + 60; // 1 min in the future
 
   // Pre-compute the postBody so we can be sure that we're using *exactly* the same body in the request
   // and in the signature. If you don't do this, you might get differently-sorted keys and blow the signature.
-  const postBody = JSON.stringify(order);
+
+  const postBody = JSON.stringify({ orders });
 
   const signature = crypto
     .createHmac('sha256', apiSecret)

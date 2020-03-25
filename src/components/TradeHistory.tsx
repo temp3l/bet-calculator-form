@@ -12,7 +12,7 @@ const ConnectedList = ({ socket }: any) => (
             .concat()
             .reverse()
             .map((trade: any) => (
-              <tr key={trade.trdMatchID}>
+              <tr key={trade.trdMatchID} style={{ color: trade.side === 'Sell' ? 'red' : 'green' }}>
                 <td>{trade.price}</td>
                 <td>{trade.size}</td>
                 <td>{trade.side}</td>
@@ -29,10 +29,7 @@ const List = connect(mapStateToProps)(ConnectedList);
 
 export default List;
 
-// price amount time
-
-// Trades
-// [
+/* [
 //   {
 //     "timestamp": "2020-03-19T08:31:44.552Z",
 //     "symbol": "XBTUSD",
@@ -44,4 +41,4 @@ export default List;
 //     "grossValue": 18381,
 //     "homeNotional": 0.00018381,
 //     "foreignNotional": 1
-//   },
+//   },*/

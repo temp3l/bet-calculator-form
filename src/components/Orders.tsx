@@ -54,7 +54,7 @@ const List = connect(mapStateToProps)(ConnectedList);
 export default List;
 
 // XBTUSD	 99	 3214.0		99	0.0308 XBT	-.--	Limit	New	9:05:18 PM
-
+/*
 const sample = {
   orderID: '7c8668df-0431-3276-308e-8818769c75d2',
   clOrdID: '',
@@ -90,3 +90,4 @@ const sample = {
   transactTime: '2020-03-19T20:25:42.431Z',
   timestamp: '2020-03-19T20:27:31.358Z'
 };
+*/
