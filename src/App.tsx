@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-globals */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useContext } from 'react';
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
@@ -27,21 +28,23 @@ const Home = () => {
     <div className='App'>
       <br />
       <br />
+      <form id='loginForm' action='/login' method='POST' autoComplete='on'>
+        <input type='email' autoComplete='email' className='DptLqMj4 EU6d2XUF' id='email' name='email' />
+        <input type='password' autoComplete='current-password' className='DptLqMj4 EU6d2XUF' id='password' name='password' />
+        <input type='submit' onClick={() => ((location as any).hash = 'asd')} />
+      </form>
       <br />
-      {/*<RecentTrades />*/}
     </div>
   );
-  // <pre>{JSON.stringify(liveData, null, 4)}</pre>
-  // <TradingView />
-  // <OrderForm onChange={console.log} price={5000} socket={socket} />
 };
 
 const App = () => {
+  //        <SocketStatus />
+
   return (
     <Router>
       <div>
         <NavBar />
-        <SocketStatus />
         <Switch>
           <Route path='/TradeHistory'>
             <TradeHistory />

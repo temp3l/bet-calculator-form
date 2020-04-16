@@ -7,20 +7,22 @@ export enum OrderTypeEnum {
   Close = 'Close', // Stops don't require an orderQty. See Execution Instructions below.
   StopLimit = 'StopLimit', // Like a Stop Market, but enters a Limit order instead of a Market order. Specify an orderQty, stopPx, and price.
   MarketIfTouched = 'MarketIfTouched', // Similar to a Stop, but triggers are done in the opposite direction. Useful for Take Profit orders.
-  LimitIfTouched = 'LimitIfTouched' // As above; use for Take Profit Limit orders.
+  LimitIfTouched = 'LimitIfTouched', // As above; use for Take Profit Limit orders.
 }
 export type IOrder = {
   symbol: string;
   orderQty: number;
   price: number;
-  ordType: OrderTypeEnum;
+  ordType: string;
   side: SideEnum;
   text?: string;
+  stopPx?: number;
+  execInst?: string;
 };
 
 export enum SideEnum {
   Sell = 'Sell',
-  Buy = 'Buy'
+  Buy = 'Buy',
 }
 export type IOrderResponse = {
   orderID: string;

@@ -67,7 +67,7 @@ export default function reducer(state = initialState, action: SocketActionType =
         if (table === 'instrument') return Object.assign({}, state, { instrument: Object.assign({}, state.instrument, ...data) });
         else if (table === 'trade') return Object.assign({}, state, { trades: state.trades.concat(data).slice(0, 100) });
         else if (table === 'position') {
-          //console.log({ table, wsAction, data });
+         // console.log({ table, wsAction, data });
           return Object.assign({}, state, { position: Object.assign({}, state.position, ...data) });
         } else if (table === 'order') {
           if (wsAction === 'partial') return Object.assign({}, state, { orders: data });
@@ -114,6 +114,12 @@ export function initializeSocket() {
       // "privateNotifications", // Individual notifications - currently not used
       // "transact"     // Deposit/Withdrawal updates
       // "wallet"       // Bitcoin address balance data, including total deposits & withdrawals
+
+      // "orderBookL2_25",      // Top 25 levels of level 2 order book
+      // "orderBookL2",         // Full level 2 order book
+      // "orderBook10",         // Top 10 levels using traditional full book push
+
+      //subscribe(['orderBook10:XBTUSD'])
     };
 
     socket.onerror = function() {
@@ -210,3 +216,37 @@ export const getSignature = ({ verb, path, postBody }: any) => {
 // "privateNotifications", // Individual notifications - currently not used
 // "transact"     // Deposit/Withdrawal updates
 // "wallet"       // Bitcoin address balance data, including total deposits & withdrawals
+
+
+let book = {
+	"table": "orderBook10",
+	"action": "update",
+	"data": [{
+		"symbol": "XBTUSD",
+		"bids": [
+			[6724, 996],
+			[6723, 41],
+			[6722, 617],
+			[6721.5, 592],
+			[6721, 41],
+			[6720, 353],
+			[6719.5, 20],
+			[6718, 100],
+			[6716, 17],
+			[6715.5, 193]
+		],
+		"timestamp": "2020-04-05T04:17:53.745Z",
+		"asks": [
+			[6724.5, 72],
+			[6725, 219],
+			[6726, 51],
+			[6727.5, 226],
+			[6728, 34],
+			[6728.5, 152],
+			[6729, 33],
+			[6729.5, 42],
+			[6730, 546],
+			[6730.5, 20]
+		]
+	}]
+}

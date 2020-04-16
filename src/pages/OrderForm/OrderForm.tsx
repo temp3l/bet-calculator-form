@@ -2,11 +2,12 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { OrderTypeEnum, IOrder, SideEnum } from '../../types/Order';
+import { postOrder } from '../../connectors/bitmexHttp';
 import './OrderForm.css';
 
 const OrderTypes = [
   { value: 'Limit', text: 'The default order type. Specify an orderQty and price.' },
-  { value: 'Market', text: 'A traditional Market order. A Market order will execute until filled or your bankruptcy price is reached, at which point it will cancel.' }
+  { value: 'Market', text: 'A traditional Market order. A Market order will execute until filled or your bankruptcy price is reached, at which point it will cancel.' },
   //{ value: 'Stop', text: 'A Stop Market order. Specify an orderQty and stopPx. When the stopPx is reached, the order will be entered into the book. On sell orders, the order will trigger if the triggering price is lower than the stopPx. On buys, higher.' },
   //{ value: 'Note', text: 'Stop orders do not consume margin until triggered. Be sure that the required margin is available in your settings so that it may trigger fully.' },
   //{ value: 'Close', text: "Stops don't require an orderQty. See Execution Instructions below." },
@@ -28,19 +29,21 @@ type SettingsState = {
 const mapStateToProps = (state: any) => ({ instrument: state.socket.instrument });
 
 const ConnectedForm = ({ instrument }: any) => {
-  const [settings, setSettings] = React.useState<SettingsState>({ capitalUSD: '500', capitalBTC: '' });
-  const [stops, setStops] = React.useState<StopsState>({ SL: '5', SLPrice: 0, TP: '10', TPPrice: 0 });
+  const [settings, setSettings] = React.useState<SettingsState>({ capitalUSD: '200', capitalBTC: '' });
+  const [stops, setStops] = React.useState<StopsState>({ SL: '0.5', SLPrice: 0, TP: '1', TPPrice: 0 });
   const [state, setState] = React.useState<IOrder>({
     symbol: 'XBTUSD',
     price: -1,
     orderQty: 100,
     ordType: OrderTypeEnum.Limit,
     side: SideEnum.Buy,
-    text: 'from bet-calculator-form'
+    text: 'from bet-calculator-form',
   });
+
   const onChange2 = (e: any) => {
     const { name, value } = e.target;
-    setState({ ...state, [name]: value });
+    let val = name === 'price' ? Number(value) : value;
+    setState({ ...state, [name]: val });
   };
   const changeStops = (e: any) => {
     const { name, value } = e.target;
@@ -52,7 +55,48 @@ const ConnectedForm = ({ instrument }: any) => {
     setSettings({ ...settings, [name]: Number(value) });
   };
   //const usd2btc = ({ capitalUSD, btcUsdRate }: SettingsState) => (Number(capitalUSD) / Number(btcUsdRate)).toFixed(4);
-
+  // STOPLOSSLIMIT: { "ordType":"StopLimit","price":7270,"stopPx":7230.5,"orderQty":400,"side":"Buy","execInst":"Close,LastPrice","symbol":"XBTUSD","text":"Submission from testnet.bitmex.com"}
+  // TAKEPROFITLIMIT: {"ordType":"LimitIfTouched","price":7200,"stopPx":7230.5,"orderQty":400,"side":"Sell","execInst":"Close,LastPrice","symbol":"XBTUSD","text":"Submission from testnet.bitmex.com"}
+  const execTrades = () => {
+    console.log({ order: state, stops });
+    let orders: IOrder[] = [
+      state,
+      {
+        // STOP-LOSS-LIMIT
+        symbol: 'XBTUSD',
+        stopPx: stops.SLPrice, // trigger
+        price: Number(state.side === 'Sell' ? Number(stops.SLPrice) + 60 : Number(stops.SLPrice) - 60),
+        orderQty: Number(state.orderQty),
+        ordType: 'StopLimit',
+        side: state.side === 'Sell' ? SideEnum.Buy : SideEnum.Sell,
+        text: 'stopLoss',
+        execInst: 'Close,LastPrice',
+      },
+      {
+        // TAKE-PROFIT-LIMIT
+        symbol: 'XBTUSD',
+        stopPx: Number(stops.TPPrice),
+        price: Number(stops.TPPrice), //state.side === 'Sell' ? Number(stops.TPPrice) + 100 : Number(stops.TPPrice) - 100,
+        orderQty: Number(state.orderQty),
+        ordType: 'LimitIfTouched',
+        side: state.side === 'Sell' ? SideEnum.Buy : SideEnum.Sell,
+        text: 'take Profit',
+        execInst: 'Close,LastPrice',
+      },
+    ];
+    postOrder({ orders })
+      .then((res: any) => {
+        console.log(res);
+      })
+      .catch((e: any) => {
+        console.log('############# error posting');
+        console.log(e);
+      })
+      .finally(() => {
+        console.log('finally ....');
+      });
+    console.log(JSON.stringify(orders, null, 5));
+  };
   React.useEffect(() => {
     const { price: _price, side } = state;
     if (_price === -1) return;
@@ -69,9 +113,8 @@ const ConnectedForm = ({ instrument }: any) => {
     setStops({
       ...stops,
       SLPrice: Math.round(_SLPrice),
-      TPPrice: Math.round(_TPPrice)
+      TPPrice: Math.round(_TPPrice),
     });
-    console.log(23);
     if (instrument && instrument.lastPrice && state.price === -1) {
       setState({ ...state, price: instrument.lastPrice });
     }
@@ -80,9 +123,8 @@ const ConnectedForm = ({ instrument }: any) => {
 
   return (
     <div className='container'>
-      <h1>huhu</h1>
       {/* <!-- Symbol, Limit/Margin -->*/}
-      <div className='form-group row '>
+      <div className='form-group row'>
         <div className='col'>
           {/* <!-- select Symbol --> */}
           <div className='input-group'>
@@ -193,6 +235,13 @@ const ConnectedForm = ({ instrument }: any) => {
         </div>
       </div>
 
+      <div className='form-group row'>
+        <div className='col'>
+          <button onClick={execTrades} className='btn btn-info btn-block'>
+            Exec
+          </button>
+        </div>
+      </div>
       <div>
         <br />
         <br />
