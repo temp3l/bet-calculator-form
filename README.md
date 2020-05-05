@@ -1,5 +1,3 @@
-EBICS transaction ?
-
 ## WickPlay
 
 Jesus candle long/short - first up => kills shorts, then down => kills longs
